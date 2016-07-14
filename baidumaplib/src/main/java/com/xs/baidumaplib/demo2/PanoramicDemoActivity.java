@@ -13,6 +13,7 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
@@ -47,6 +48,8 @@ public class PanoramicDemoActivity extends AppCompatActivity
     private GeoCoder                mSearch = null;  // 搜索模块，也可去掉地图模块独立使用
 
     private double longitude,latitude;
+    private String uid;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -61,6 +64,7 @@ public class PanoramicDemoActivity extends AppCompatActivity
         mMapView = (MapView) findViewById(R.id.mv_mapview);
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMyLocationEnabled(true);
+        mBaiduMap.setOnMapClickListener(new MyOnMapClickListener());
         mLclient = new LocationClient(this);
 
         /*** 初始化*/
@@ -79,6 +83,8 @@ public class PanoramicDemoActivity extends AppCompatActivity
      * 更新地图状态 搜索 解码地址
      */
     private void updateMapStatus() {
+        mMapView.removeViewAt(2);
+        mMapView.removeViewAt(1);
         MapStatusUpdate up;
         up = MapStatusUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 17);
         Log.e(TAG, "longitude==" + longitude + "\n" + "latitude=" + latitude);
@@ -87,6 +93,7 @@ public class PanoramicDemoActivity extends AppCompatActivity
         mSearch.reverseGeoCode(new ReverseGeoCodeOption().location(new LatLng(latitude, longitude)));
         mSearch.setOnGetGeoCodeResultListener(this);
         mBaiduMap.setOnMapStatusChangeListener(new MyOnMapStatusChangeListener());
+        //将该POI点设置为地图中心
         mBaiduMap.setMapStatus(up);
     }
 
@@ -115,6 +122,7 @@ public class PanoramicDemoActivity extends AppCompatActivity
             Intent intent = new Intent(PanoramicDemoActivity.this,PanoramicShowActivity.class);
             intent.putExtra("latitude",latitude);
             intent.putExtra("longitude",longitude);
+            intent.putExtra("uid",uid);
             startActivity(intent);
         }
     }
@@ -133,7 +141,6 @@ public class PanoramicDemoActivity extends AppCompatActivity
                     .direction(100).latitude(bdLocation.getLatitude())
                     .longitude(bdLocation.getLongitude()).build();
             mBaiduMap.setMyLocationData(locData);
-
             LatLng ll = new LatLng(bdLocation.getLatitude(),
                     bdLocation.getLongitude());
             MapStatus.Builder builder = new MapStatus.Builder();
@@ -164,6 +171,20 @@ public class PanoramicDemoActivity extends AppCompatActivity
             longitude = mapStatus.target.longitude;
             mSearch.reverseGeoCode(new ReverseGeoCodeOption().location(mapStatus.target));
 
+        }
+    }
+    class MyOnMapClickListener implements BaiduMap.OnMapClickListener {
+
+        @Override
+        public void onMapClick(LatLng latLng) {
+            Log.e(TAG, "onMapClick: "+latLng.toString() );
+        }
+
+        @Override
+        public boolean onMapPoiClick(MapPoi mapPoi) {
+            uid = mapPoi.getUid();
+            Log.e(TAG, "onMapPoiClick: "+mapPoi.toString() );
+            return false;
         }
     }
 
